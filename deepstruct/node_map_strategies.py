@@ -23,6 +23,23 @@ class CustomNodeMap:
         self.node_mappers.get(module, self.default_mapper).add_node(graph, predecessors, **kwargs)
 
 
+class AdjustableNodeMap(CustomNodeMap):
+
+    def __init__(self, mappers, threshold=-1):
+        self.threshold = -1
+        super().__init__(mappers, All2VertexNodeMapper())
+
+    def set_default_threshold(self, thres):
+        self.threshold = thres
+
+    def set_default_node_mapper(self, default_mapper):
+        super().default_mapper = default_mapper
+
+    def add_node_mapper(self, entries):
+        for key, value in entries.items():
+            super().node_mappers[key] = value
+
+
 class HighLevelNodeMap(CustomNodeMap):
 
     def __init__(self):
