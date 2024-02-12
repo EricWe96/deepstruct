@@ -30,6 +30,10 @@ semantic_version = "^2.10"
 deprecated = "^1.2.10"
 numpy = "^1.21"
 tqdm = "^4.66.1"
+jupyter = "^1.0.0"
+gputil = "^1.4.0"
+transformers = "^4.37.1"
+seaborn = "^0.13.2"
 
 
 [tool.poetry.dev-dependencies]

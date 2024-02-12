@@ -30,8 +30,9 @@ def calculate_network_metrics(graph):
         'edges': graph.number_of_edges(),
         'avg degree': sum(dict(graph.degree()).values()) / graph.number_of_nodes(),
         'density': nx.density(graph),
-        'Average cluster coefficient': nx.average_clustering(graph)
-    }
+        'Average cluster coefficient': nx.average_clustering(graph),
+
+    } # degree verteilung, cluster coeff. verteilung, pairwise shortest (verteilung dann mittelwert)path mittelwert,
     return metrics
 
 
@@ -253,6 +254,7 @@ def test_fx_resnet18():
                                        traversal_strategy=FXTraversal())
     graph_transformer.transform(resnet)
     graph = graph_transformer.get_graph()
+    print(graph)
     plot_graph(graph, "Transformation resnet")
 
 

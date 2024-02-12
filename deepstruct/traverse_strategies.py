@@ -106,7 +106,7 @@ class FXTraversal(TraversalStrategy):
         from torch.fx.passes.shape_prop import ShapeProp
         ShapeProp(traced).propagate(input_tensor)
         self.traced_model = traced
-        traced.graph.print_tabular()
+        # traced.graph.print_tabular()
         self._add_nodes_to_graph(traced, traced_modules)
 
     def _add_nodes_to_graph(self, traced, traced_modules):
@@ -159,7 +159,7 @@ class FXTraversal(TraversalStrategy):
             return any(isinstance(node.orig_mod, m) for m in exclude_modules)
         else:
             node_name = getattr(node.orig_mod, '__name__', "name not found in orig")
-            if node_name is "name not found in orig":
+            if node_name == "name not found in orig":
                 node_name = str(node.orig_mod)
             return any(node.orig_mod == f or node_name
                        == getattr(f, '__name__', "name not found in fn") for f in exclude_fn)
