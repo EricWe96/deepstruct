@@ -1,27 +1,17 @@
 # deepstruct - neural network structure tool [![PyPI version](https://badge.fury.io/py/deepstruct.svg)](https://badge.fury.io/py/deepstruct) ![Tests](https://github.com/innvariant/deepstruct/workflows/Tests/badge.svg) [![Documentation Status](https://readthedocs.org/projects/deepstruct/badge/?version=latest)](https://deepstruct.readthedocs.io/en/latest/?badge=latest) [![Downloads](https://pepy.tech/badge/deepstruct)](https://pepy.tech/project/deepstruct)  [![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)](https://www.python.org/downloads/release/python-380/)
-Create deep neural networks based on very different kinds of graphs or use *deepstruct* to extract the structure of your deep neural network.
+![deepstruct neural network structure tool](docs/logo-wide.png)
 
-Deepstruct combines tools for fusing machine learning and graph theory.
-We are fascinated with the interplay of end-to-end learnable, locally restricted models and their graph theoretical properties.
-Searching for evidence of the structural prior hypothesis.
-Interested in pruning, neural architecture search or learning theory in general?
+Create deep neural networks based on very different kinds of graphs or use *deepstruct* to extract the structure of your deep neural network.
+Deepstruct can automatically create a deep neural network models based on graphs and for purposes of visualization, analysis or transformations it also supports graph extraction from a given model.
+
+Interested in neural network visualizations, pruning, neural architecture search or neural structure in general?
 
 See [examples](#examples) below or [read the docs](https://deepstruct.readthedocs.io).
 
-We're glad if you reference our work
-```bibtex
-@article{stier2022deepstruct,
-  title={deepstruct -- linking deep learning and graph theory},
-  author={Stier, Julian and Granitzer, Michael},
-  journal={Software Impacts},
-  volume={11},
-  year={2022},
-  publisher={Elsevier}
-}
-```
 
 ## Installation
 - With **pip** from PyPi: ``pip install deepstruct``
+- With **poetry** (recommended for *projects*) using PyPi: ``poetry add deepstruct``
 - With **conda** in your *environment.yml* (recommended for reproducible experiments):
 ```yaml
 name: exp01
@@ -32,10 +22,19 @@ dependencies:
 - pip:
     - deepstruct
 ```
-- With **poetry** (recommended for *projects*) using PyPi: ``poetry add deepstruct``
 - From public GitHub: ``pip install --upgrade git+ssh://git@github.com:innvariant/deepstruct.git``
 
-## Quick usage: multi-layered feed-forward neural network on MNIST
+
+## Quick usages
+*deepstruct* provides two major tool approaches to pytorch models:
+
+1. Based on a graph structure, it allows you to automatically **construct** a deep neural network model.
+2. Given a (pre-trained) model, *deepstruct* provides options to **extract** different notions of a graph from it as to further visualize or analyze it.
+
+
+### Constructing Models
+
+#### Multi-layered feed-forward neural network on MNIST
 The simplest implementation is one which provides multiple layers with binary masks for each weight matrix.
 It doesn't consider any skip-layer connections.
 Each layer is then connected to only the following one.
@@ -56,7 +55,7 @@ for layer in deepstruct.sparse.maskable_layers(mnist_model):
 and if you disable some of these mask elements you have defined your first sparse model.
 
 
-## Examples
+#### Random Graphs as Structural Priors
 Specify structures by prior design, e.g. random social networks transformed into directed acyclic graphs:
 ```python
 import networkx as nx
@@ -77,17 +76,8 @@ pruned_structure = model.generate_structure()  # Get the structure -- a networkx
 new_model = deepstruct.sparse.MaskedDeepDAN(784, 10, pruned_structure)
 ```
 
-Define a feed-forward neural network (with no skip-layer connections) and obtain its structure as a graph:
-```python
-import deepstruct.sparse
 
-model = deepstruct.sparse.MaskedDeepFFN(784, 10, [100, 100])
-# .. train model
-model.generate_structure()  # a networkx graph
-```
-
-
-### Recurrent Neural Networks with sparsity
+#### Recurrent Neural Networks with sparsity
 ```python
 import torch
 import deepstruct.recurrent
@@ -111,6 +101,26 @@ random_input = torch.tensor(
 )
 model.forward(random_input)
 ```
+
+
+
+### Graph Extraction
+Define a feed-forward neural network (with no skip-layer connections) and obtain its structure as a graph:
+```python
+import torch
+import deepstruct.sparse
+from deepstruct.transform import GraphTransform
+
+model = deepstruct.sparse.MaskedDeepFFN(784, 10, [100, 100])
+# .. train the model or load a pre-trained
+
+# Define a random input tensor which is required to analyse the structure
+input_random = torch.randn((1, 20))
+functor = GraphTransform(input_random)
+result = functor.transform(model)
+```
+
+
 
 
 
@@ -165,17 +175,19 @@ Thus there are various ways for implementing Sparse Neural Networks.
 We provide some simple utilities for artificial function approximation.
 Like polynomials, neural networks are universal function approximators on bounded intervals of compact spaces.
 To test, you can easily define a function of any finite dimension, e.g. $f: \mathbb{R}^2\rightarrow\mathbb{R}, (x,y)\mapsto 20 + x - 1.8*(y-5) + 3 * np.sin(x + 2 * y) * y + (x / 4) ** 4 + (y / 4) ** 4$:
+
 ```python
 import numpy as np
 import torch.utils.data
-from deepstruct.dataset import FuncDataset
+from dataset import FuncDataset
 from deepstruct.sparse import MaskedDeepFFN
 
 # Our artificial landscape: f: R^2 -> R
 # Have a look at https://github.com/innvariant/eddy for some visual examples
 # You could easily define arbitrary functions from R^a to R^b
-stier2020B1d = lambda x, y: 20 + x - 1.8*(y-5) + 3 * np.sin(x + 2 * y) * y + (x / 4) ** 4 + (y / 4) ** 4
-ds_input_shape = (2,)  # specify the number of input dimensions (usually a one-sized tensor if no further structures are used)
+stier2020B1d = lambda x, y: 20 + x - 1.8 * (y - 5) + 3 * np.sin(x + 2 * y) * y + (x / 4) ** 4 + (y / 4) ** 4
+ds_input_shape = (
+    2,)  # specify the number of input dimensions (usually a one-sized tensor if no further structures are used)
 # Explicitly define the target function for the dataset which returns a numpy array of our above function
 # By above definition x is two-dimensional, so you have access to x[0] and x[1]
 fn_target = lambda x: np.array([stier2020B1d(x[0], x[1])])
@@ -209,4 +221,34 @@ for feat, target in train_loader:
 
     # compute a loss based on the expected target and the models prediction
     # ..
+```
+
+
+# References
+Have a look into our positioning paper on [arxiv](https://arxiv.org/abs/2111.06679) and related articles.
+We're glad if you cite our work
+```bibtex
+@article{stier2022deepstruct,
+  title={deepstruct -- linking deep learning and graph theory},
+  author={Stier, Julian and Granitzer, Michael},
+  journal={Software Impacts},
+  volume={11},
+  year={2022},
+  publisher={Elsevier}
+}
+@article{stier2019structural,
+  title={Structural analysis of sparse neural networks},
+  author={Stier, Julian and Granitzer, Michael},
+  journal={Procedia Computer Science},
+  volume={159},
+  pages={107--116},
+  year={2019},
+  publisher={Elsevier}
+}
+@phdthesis{stier2024structures,
+  author  = "Julian Stier",
+  title   = "Structures of Artificial Neural Networks - Empirical Investigations",
+  school  = "University of Passau",
+  year    = "2024"
+}
 ```
